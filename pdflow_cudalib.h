@@ -41,6 +41,8 @@ public:
     //Parameters
     unsigned int rows;
     unsigned int cols;
+    unsigned int camera_width;
+    unsigned int camera_height;
     unsigned int ctf_levels;
     unsigned int cam_mode;
     float lambda_i;
@@ -125,7 +127,7 @@ public:
     __host__ void allocateDevMemory();
     __host__ void allocateMemoryNewLevel(unsigned int rows_loc, unsigned int cols_loc, unsigned int level_i, unsigned int level_image_i);
     __host__ void readParameters(unsigned int rows_host, unsigned int cols_host, float lambda_i_host, float lambda_d_host, float mu_host,
-								 float *g_mask, unsigned int levels_host, unsigned int cam_mode_host, float fovh_host, float fovv_host);
+                                 float *g_mask, unsigned int levels_host, unsigned int cam_mode_host, float fovh_host, float fovv_host, unsigned int width_host=640, unsigned int height_host=480);
 
     __host__ void copyNewFrames(float *colour_wf, float *depth_wf);
     __host__ void freeDeviceMemory();
@@ -157,7 +159,7 @@ public:
 // Bridges between Cuda-related functions and the code compiled with the standard compiler (without CUDA)
 //-------------------------------------------------------------------------------------------------------
 CSF_cuda *ObjectToDevice(CSF_cuda *csf_host);
-void GaussianPyramidBridge(CSF_cuda *csf, unsigned int levels, unsigned int cam_mode);
+void GaussianPyramidBridge(CSF_cuda *csf, unsigned int levels, unsigned int cam_mode, unsigned int width = 640, unsigned int height = 480);
 void AssignZerosBridge(CSF_cuda *csf);
 void UpsampleBridge(CSF_cuda *csf);
 void ImageGradientsBridge(CSF_cuda *csf);

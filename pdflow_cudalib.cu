@@ -18,7 +18,8 @@
 **																			**
 **  You should have received a copy of the GNU General Public License		**
 **  along with this program.  If not, see <http://www.gnu.org/licenses/>.	**
-**																			**
+**																	
+		**
 *****************************************************************************/
 
 #include "pdflow_cudalib.h"
@@ -28,8 +29,8 @@
 //=============================================================================
 __host__ void CSF_cuda::allocateDevMemory()
 {
-    const unsigned int width = 640/cam_mode;
-    const unsigned int height = 480/cam_mode;
+    const unsigned int width = camera_width/cam_mode;
+    const unsigned int height = camera_height/cam_mode;
     unsigned int s;
 
     //Allocate the unfiltered depth and colour images on GPU
@@ -174,7 +175,7 @@ CSF_cuda *ObjectToDevice(CSF_cuda *csf_host)
 //                Copy data from host to device and viceversa
 //=============================================================================
 __host__ void CSF_cuda::readParameters(unsigned int rows_host, unsigned int cols_host, float lambda_i_host, float lambda_d_host, float mu_host,
-									   float *g_mask, unsigned int levels_host, unsigned int cam_mode_host, float fovh_host, float fovv_host)
+									   float *g_mask, unsigned int levels_host, unsigned int cam_mode_host, float fovh_host, float fovv_host, unsigned int width_host, unsigned int height_host)
 {
     rows = rows_host;
     cols = cols_host;
@@ -185,7 +186,8 @@ __host__ void CSF_cuda::readParameters(unsigned int rows_host, unsigned int cols
     cam_mode = cam_mode_host;
     fovh = fovh_host;
     fovv = fovv_host;
-
+    camera_width = width_host;
+    camera_height = height_host;
     //Allocate  and copy gaussian mask
     cudaError_t err = cudaMalloc((void**)&g_mask_dev, 5*5*sizeof(float));
     //printf("%s", cudaGetErrorString(err));
@@ -194,8 +196,8 @@ __host__ void CSF_cuda::readParameters(unsigned int rows_host, unsigned int cols
 
 __host__ void CSF_cuda::copyNewFrames(float *colour_wf, float *depth_wf)
 {
-    const unsigned int width = 640/cam_mode;
-    const unsigned int height = 480/cam_mode;
+    const unsigned int width = camera_width/cam_mode;
+    const unsigned int height = camera_height/cam_mode;
 
     cudaMemcpy(depth_wf_dev, depth_wf, width*height*sizeof(float), cudaMemcpyHostToDevice);
     cudaMemcpy(colour_wf_dev, colour_wf, width*height*sizeof(float), cudaMemcpyHostToDevice);
@@ -250,7 +252,7 @@ __host__ void CSF_cuda::freeDeviceMemory()
 {
     cudaFree(g_mask_dev);
 
-    const unsigned int width = 640/cam_mode;
+    const unsigned int width = camera_width/cam_mode;
     const unsigned int pyr_levels = roundf(log2f(width/cols)) + ctf_levels;
     for (unsigned int i = 0; i<pyr_levels; i++)
     {
@@ -1165,12 +1167,12 @@ __device__ void CSF_cuda::computeMotionField(unsigned int index)
 
 //                              Bridges
 //=================================================================================
-void GaussianPyramidBridge(CSF_cuda *csf, unsigned int levels, unsigned int cam_mode)
+void GaussianPyramidBridge(CSF_cuda *csf, unsigned int levels, unsigned int cam_mode, unsigned int width, unsigned int height)
 {
     for (unsigned int i=0; i<levels; i++)
     {
-        const unsigned int cols_i_aux = 640/(cam_mode*powf(2,i));
-        const unsigned int rows_i_aux = 480/(cam_mode*powf(2,i));
+        const unsigned int cols_i_aux = width/(cam_mode*powf(2,i));
+        const unsigned int rows_i_aux = height/(cam_mode*powf(2,i));
 
         cudaMemcpy(&csf->rows_i, &rows_i_aux, sizeof(float), cudaMemcpyHostToDevice);
         cudaMemcpy(&csf->cols_i, &cols_i_aux, sizeof(float), cudaMemcpyHostToDevice);
